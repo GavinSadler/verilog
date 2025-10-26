@@ -138,3 +138,112 @@ module UartRx #(
     assign o_error = r_error;
 
 endmodule
+
+module tb_UartRx;
+
+    // === Hardware definitions ===
+
+    // Regular pulsing clock
+    reg clk = 0;
+    always #1 clk = ~clk;
+
+    // wire rx;
+    // wire [7:0] data;
+    // wire error;
+
+    // UartRx uart_in #(
+    //     CLOCK_FREQ_HZ(25_000_000),
+    //     BAUD_RATE(9_600),
+    //     DATA_BITS(8),
+    //     PARITY_BIT(0),
+    //     ODD_PARITY(1),
+    //     STOP_BITS(1)
+    // ) (
+    //     .i_Clk(clk),
+    //     .i_rx(i_rx),
+    //     o_data(o_data),
+    //     o_error()
+    // );
+
+    reg tx = 1;
+
+    task send_uart(
+        input integer baud_rate,
+        input integer data,
+        input integer stop_bits,
+        input bool parity_bit_enabled,
+        input bool odd_parity
+        );
+        begin
+            // Start bit
+            tx = 0;
+            #1;
+
+            // Loop through input 'data' and set the bits accordingly
+            for (integer i = 0; i < 8; i++) begin
+                tx = data[i];
+                #1;
+            end
+            
+            // Parity bit
+            if (parity_bit_enabled) begin
+                tx = ^data ^ odd_parity;
+                #1;
+            end
+
+            // Stop bits
+            tx = 1;
+            #(stop_bits);
+
+            // Back to high state
+            tx = 1;
+        end
+    endtask
+
+    // === Value expectation ===
+
+    // reg [7:0] expected = 0;
+
+    // always @(posedge clk) begin
+    //     if (reset)
+    //         expected <= 0;
+    //     else
+    //         expected <= expected + 1;
+
+    //     if (val_c1 !== expected) begin
+    //         $display("ERROR at time %t: val_c1 = %0d, expected = %0d", $time, val_c1, expected);
+    //     end
+    // end
+
+
+    // === Test sequence ===
+    
+    reg [7:0] r_input = 8'hFE;
+
+    initial begin
+        $dumpfile("tb_UartRx.vcd");
+        $dumpvars(0, tb_UartRx);
+        // $monitor("At time %t, value = %h (%0d)", $time, val_c1, val_c1);
+
+        #5;
+        // Odd parity
+        send_uart(
+            8'b10010001,
+            2,
+            1,
+            1
+        );
+        #5;
+        // Even parity
+        send_uart(
+            8'b10010001,
+            2,
+            1,
+            0
+        );
+
+        $display("Simulation complete");
+        $finish;
+    end
+
+endmodule

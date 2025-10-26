@@ -4,19 +4,14 @@ module Counter #(
 ) (
     input                  i_clk,
     input                  i_reset,
-    output [OUT_WIDTH-1:0] o_out
+    output reg [OUT_WIDTH-1:0] o_out = {OUT_WIDTH{1'b0}}
 );
-
-    reg [OUT_WIDTH-1:0] r_out = {OUT_WIDTH{1'b0}};
 
     always @(posedge i_clk or posedge i_reset)
         if(i_reset)
-            r_out <= {OUT_WIDTH{1'b0}};
-            // r_out <= {{(OUT_WIDTH - 1){1'b0}}, 1'b1}; // Test reset expectation to be 0
+            o_out <= {OUT_WIDTH{1'b0}};
         else
-            r_out <= r_out + 1;
-
-    assign o_out = r_out;
+            o_out <= o_out + 1;
 
 endmodule
 
@@ -38,12 +33,12 @@ module tb_Counter;
     reg clk = 0;
     always #1 clk = ~clk;
 
-    wire [7:0] val;
+    wire [7:0] val_c1;
 
-    Counter c (
+    Counter c1 (
         .i_clk(clk),
         .i_reset(reset),
-        .o_out(val)
+        .o_out(val_c1)
     );
 
     // === Value expectation ===
@@ -56,8 +51,8 @@ module tb_Counter;
         else
             expected <= expected + 1;
 
-        if (val !== expected) begin
-            $display("ERROR at time %t: val = %0d, expected = %0d", $time, val, expected);
+        if (val_c1 !== expected) begin
+            $display("ERROR at time %t: val_c1 = %0d, expected = %0d", $time, val_c1, expected);
         end
     end
 
@@ -67,7 +62,7 @@ module tb_Counter;
     initial begin
         $dumpfile("tb_Counter.vcd");
         $dumpvars(0, tb_Counter);
-        // $monitor("At time %t, value = %h (%0d)", $time, val, val);
+        // $monitor("At time %t, value = %h (%0d)", $time, val_c1, val_c1);
 
         # 17;
         pulse_reset(11);
